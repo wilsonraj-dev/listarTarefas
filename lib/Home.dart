@@ -12,26 +12,37 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
 
   List _listaTarefas = [];
+  TextEditingController _controllerTarefa = TextEditingController();
 
   Future<File> _getFile() async{
     final diretorio = await getApplicationDocumentsDirectory();
     return File( "${diretorio.path}/dados.json" );
   }
 
-  _salvarArquivo() async {
+  //
+  _salvarTarefa(){
+    String textoDigitado = _controllerTarefa.text;
 
-    var arquivo = await _getFile();
-
-    //Criar dados
     Map<String, dynamic> tarefa = Map();
-    tarefa["titulo"] = "Ir ao mercado";
+    tarefa["titulo"] = textoDigitado;
     tarefa["realizada"] = false;
-    _listaTarefas.add(tarefa);
+
+    setState(() {
+      _listaTarefas.add( tarefa );
+    });
+    _salvarArquivo();
+    _controllerTarefa.text = "";
+  }
+
+  //
+  _salvarArquivo() async {
+    var arquivo = await _getFile();
 
     String dados = json.encode(_listaTarefas);
     arquivo.writeAsString(dados);
   }
 
+  //
   _lerArquivo() async {
     try{
       final arquivo = await _getFile();
@@ -40,7 +51,9 @@ class _HomeState extends State<Home> {
       return null;
     }
   }
+  //
 
+  //
   void initState(){
     super.initState();
 
@@ -50,6 +63,7 @@ class _HomeState extends State<Home> {
       });
     });
   }
+  //
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +75,9 @@ class _HomeState extends State<Home> {
         title: Text("Lista de tarefas"),
         backgroundColor: Colors.purple,
       ),
+
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      //
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         backgroundColor: Colors.purple,
@@ -72,11 +88,12 @@ class _HomeState extends State<Home> {
                 return AlertDialog(
                   title: Text("Adicionar tarefa"),
                   content: TextField(
+                    controller: _controllerTarefa,
                     decoration: InputDecoration(
                       labelText: "Digite sua tarefa",
                     ),
                     onChanged: (text){
-
+                      //
                     },
                   ),
                   actions: <Widget>[
@@ -88,7 +105,9 @@ class _HomeState extends State<Home> {
                     ),
                     FlatButton(
                       child: Text("Salvar"),
-                      onPressed: (){},
+                      onPressed: (){
+                        _salvarTarefa();
+                      },
                     ),
                   ],
                 );
@@ -96,6 +115,8 @@ class _HomeState extends State<Home> {
           );
         },
       ),
+
+      //
       body: Column(
         children: <Widget>[
           Expanded(
@@ -103,10 +124,17 @@ class _HomeState extends State<Home> {
                   itemCount: _listaTarefas.length,
                   // ignore: missing_return
                   itemBuilder: (context, index){
-                    return ListTile(
-                      title: Text(_listaTarefas [index] ["titulo"]),
+                    return CheckboxListTile(
+                      title: Text(_listaTarefas[index]['titulo']),
+                      value: _listaTarefas[index]['realizada'],
+                      onChanged: (valorAlterado){
+                        setState(() {
+                          _listaTarefas[index]['realizada'] = valorAlterado;
+                        });
+                        _salvarArquivo();
+                      },
                     );
-                  }
+                  },
               ),
           ),
         ],
